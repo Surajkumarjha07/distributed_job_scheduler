@@ -1,3 +1,11 @@
 spring:
   application:
     name: jobscheduler
+server:
+  port: 8000
+app:
+  datasource:
+    url: jdbc:postgresql://${NEON_HOST}/${NEON_DB}?sslmode=require&channel_binding=require
+    username: ${NEON_USER}
+    password: ${NEON_PASSWORD}
+    driver-class-name: org.postgresql.Driver
