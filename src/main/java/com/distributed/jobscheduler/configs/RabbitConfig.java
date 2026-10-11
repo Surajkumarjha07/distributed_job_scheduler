@@ -4,12 +4,12 @@ import com.rabbitmq.client.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.retry.RetryPolicy;
 import org.springframework.core.retry.RetryTemplate;
-import org.springframework.messaging.converter.JacksonJsonMessageConverter;
-import org.springframework.messaging.converter.MessageConverter;
 
 import java.time.Duration;
 
@@ -62,11 +62,12 @@ public class RabbitConfig {
     }
 
     @Bean
-    public RabbitTemplate rabbitTemplate(CachingConnectionFactory factory, MessageConverter converter, RetryTemplate retryTemplate) {
-        RabbitTemplate template = new RabbitTemplate();
+    public RabbitTemplate rabbitTemplate(CachingConnectionFactory connectionFactory, MessageConverter messageConverter, RetryTemplate retryTemplate) {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
 
         template.setMandatory(true);
         template.setRetryTemplate(retryTemplate);
+        template.setMessageConverter(messageConverter);
 
         template.setConfirmCallback((correlationData, ack, cause) -> {
             if (!ack) {
