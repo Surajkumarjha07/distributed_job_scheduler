@@ -60,7 +60,7 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
                 version = version + 1
             WHERE job_id = :jobId AND status = 'RUNNING' AND locked_by = :workerId
     """, nativeQuery = true)
-    void markCompleted(@Param("jobId") String jobId, @Param("workerId") String workerId);
+    int markCompleted(@Param("jobId") String jobId, @Param("workerId") String workerId);
 
     @Transactional
     @Modifying
@@ -75,7 +75,7 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
                 version = version + 1
             WHERE job_id = :jobId AND status = 'RUNNING' AND locked_by = :workerId
     """, nativeQuery = true)
-    void markRetry(@Param("jobId") String jobId, @Param("workerId") String workerId,
+    int markRetry(@Param("jobId") String jobId, @Param("workerId") String workerId,
                    @Param("delaySeconds") long delaySeconds);
 
     @Transactional
@@ -103,4 +103,11 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
     int reapStale(@Param("timeoutSeconds") long timeoutSeconds,
                   @Param("maxRetries") int maxRetries);
 
+    @Transactional
+    @Modifying
+    @Query(value = """
+    UPDATE jobs SET locked_at = now()
+    WHERE job_id = :jobId AND status = 'RUNNING' AND locked_by = :token
+    """, nativeQuery = true)
+    int heartbeat(@Param("jobId") String jobId, @Param("token") String token);
 }

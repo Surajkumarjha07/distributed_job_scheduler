@@ -4,9 +4,6 @@ import com.distributed.jobscheduler.utils.Utils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -66,24 +63,6 @@ public class GlobalExceptionHandler {
                 .toList();
 
         return build(HttpStatus.BAD_REQUEST, "Validation failed", details);
-    }
-
-    // 401 — bad login credentials
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
-        return build(HttpStatus.UNAUTHORIZED, "Invalid email or password");
-    }
-
-    // 401 — any other authentication failure (e.g. missing/invalid JWT)
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ErrorResponse> handleAuthException(AuthenticationException ex) {
-        return build(HttpStatus.UNAUTHORIZED, "Authentication failed");
-    }
-
-    // 403 — authenticated but not allowed (e.g. wrong role)
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
-        return build(HttpStatus.FORBIDDEN, "You do not have permission to perform this action");
     }
 
     // 400 — bad request data that doesn't fit validation (e.g. malformed JSON)

@@ -1,4 +1,4 @@
-package com.distributed.jobscheduler.services;
+package com.distributed.jobscheduler;
 
 import com.distributed.jobscheduler.dto.CreateJobDTO;
 import com.distributed.jobscheduler.entities.JobEntity;
@@ -9,7 +9,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 

@@ -12,3 +12,5 @@ scheduler:
   lock-timeout-seconds: 300   # must be longer than your slowest job
   max-retries: 3
   retry-base-seconds: 5
+  heartbeat-seconds: 5
+  api-key-secret: "lockheedmartinsecretf22raptorfighterjet"

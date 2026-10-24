@@ -1,6 +1,7 @@
 package com.distributed.jobscheduler.configs;
 
 import com.rabbitmq.client.ConnectionFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -14,6 +15,7 @@ import org.springframework.core.retry.RetryTemplate;
 import java.time.Duration;
 
 @Configuration
+@Slf4j
 public class RabbitConfig {
     @Bean
     public ConnectionFactory rabbitConnectionFactoryBean() throws Exception {
@@ -50,7 +52,7 @@ public class RabbitConfig {
 
         new RetryTemplate(connectionRetryPolicy).invoke(() -> {
             factory.createConnection().close();
-            System.out.println("Successfully connected to RabbitMQ!");
+            log.info("Successfully connected to RabbitMQ!");
         });
 
         return factory;
@@ -71,12 +73,12 @@ public class RabbitConfig {
 
         template.setConfirmCallback((correlationData, ack, cause) -> {
             if (!ack) {
-                System.err.println("Publish not confirmed:::::::: " + cause);
+                log.error("Publish not confirmed:::::::: {}", cause);
             }
         });
 
         template.setReturnsCallback((returned) -> {
-            System.err.println("Message returned (unroutable): " + returned.getMessage());
+            log.error("Message returned (unroutable): {}", returned.getMessage());
         });
 
         return template;

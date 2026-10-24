@@ -2,7 +2,7 @@ package com.distributed.jobscheduler.controllers;
 
 import com.distributed.jobscheduler.dto.CreateJobDTO;
 import com.distributed.jobscheduler.entities.JobEntity;
-import com.distributed.jobscheduler.services.JobService;
+import com.distributed.jobscheduler.JobService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;

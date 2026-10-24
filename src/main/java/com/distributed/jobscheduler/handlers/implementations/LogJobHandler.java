@@ -1,12 +1,13 @@
-package com.distributed.jobscheduler.worker;
+package com.distributed.jobscheduler.handlers.implementations;
 
 import com.distributed.jobscheduler.entities.JobEntity;
+import com.distributed.jobscheduler.handlers.interfaces.JobStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-public class LogJobHandler implements JobHandler {
+public class LogJobHandler implements JobStrategy {
     @Override public String type() { return "LOG"; }
 
     @Override
