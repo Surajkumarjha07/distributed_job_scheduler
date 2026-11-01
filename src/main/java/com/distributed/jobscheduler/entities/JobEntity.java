@@ -33,7 +33,7 @@ public class JobEntity {
     private String type;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "payload", nullable = false)
+    @Column(name = "payload", nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> payload;
 
     @Column(name = "message", nullable = false)

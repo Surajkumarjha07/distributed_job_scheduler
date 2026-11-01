@@ -15,6 +15,7 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
     List<JobEntity> findByUserId(String userId);
     List<JobEntity> findByUserIdAndStatus(String userId, String status);
 
+    @Modifying
     @Query(value = """
         UPDATE jobs
             SET status     = 'RUNNING',
@@ -47,7 +48,7 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
                 AND status    = 'RUNNING'
                 AND locked_by = :workerId
     """, nativeQuery = true)
-    void release(@Param("jobId") String jobId, @Param("workerId") String workerId);
+    int release(@Param("jobId") String jobId, @Param("workerId") String workerId);
 
     @Transactional
     @Modifying

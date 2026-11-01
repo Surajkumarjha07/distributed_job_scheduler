@@ -24,6 +24,13 @@ public class ApiKeyFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain chain
     ) throws ServletException, IOException {
+        if (request.getRequestURI().equals("/")
+            || request.getRequestURI().equals("/health")
+        ) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         String provided = request.getHeader("X-API-KEY");
 
         if (provided == null || !MessageDigest.isEqual(

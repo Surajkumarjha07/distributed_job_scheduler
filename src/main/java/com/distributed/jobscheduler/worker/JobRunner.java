@@ -1,12 +1,18 @@
 package com.distributed.jobscheduler.worker;
 
+import com.distributed.jobscheduler.dto.JobTask;
 import com.distributed.jobscheduler.entities.JobEntity;
 import com.distributed.jobscheduler.repositories.JobRepository;
 import com.distributed.jobscheduler.handlers.interfaces.JobStrategy;
+import com.distributed.jobscheduler.services.JobService;
+import jakarta.annotation.PreDestroy;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -22,16 +28,51 @@ public class JobRunner {
     private final int maxRetries;
     private final long retryBaseSeconds;
     private final ScheduledExecutorService heartbeatScheduler;
+    @Getter
+    private volatile boolean shuttingDown = false;
+    private final ThreadPoolExecutor jobExecutor;
+
+    @Autowired
+    JobService jobService;
 
     @Value("${scheduler.heartbeat-seconds:10}")
     private long heartbeatSeconds;
+
+    @Value("${scheduler.heartbeat-max-failures:3}")
+    private int heartbeatMaxFailures;
+
+    @PreDestroy
+    public void onShutDown() {
+        shuttingDown = true;
+
+        List<Runnable> queued = new ArrayList<>();
+        jobExecutor.getQueue().drainTo(queued);
+
+        for (Runnable r : queued) {
+            if (r instanceof JobTask j) {
+                jobService.releaseJob(j.job().getJobId(), j.job().getLockedBy());
+            }
+        }
+
+        jobExecutor.shutdown();
+        try {
+            if (!jobExecutor.awaitTermination(20, TimeUnit.SECONDS)) {
+                jobExecutor.shutdownNow();
+                jobExecutor.awaitTermination(5, TimeUnit.SECONDS);
+            }
+        } catch (InterruptedException e) {
+            jobExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
 
     public JobRunner(
             JobRepository jobRepository,
             List<JobStrategy> handlerList,
             @Value("${scheduler.max-retries:3}") int maxRetries,
             @Value("${scheduler.retry-base-seconds:5}") long retryBaseSeconds,
-            ScheduledExecutorService heartbeatScheduler
+            ScheduledExecutorService heartbeatScheduler,
+            ThreadPoolExecutor jobExecutor
     ) {
         this.jobRepository = jobRepository;
         this.handlers = handlerList.stream()
@@ -39,6 +80,7 @@ public class JobRunner {
         this.maxRetries = maxRetries;
         this.retryBaseSeconds = retryBaseSeconds;
         this.heartbeatScheduler = heartbeatScheduler;
+        this.jobExecutor = jobExecutor;
     }
 
     public void run(JobEntity job) {
@@ -60,6 +102,10 @@ public class JobRunner {
             if (jobRepository.markCompleted(jobId, workerId) == 0) {
                 log.warn("Job {} finished but was no longer ours (reclaimed?)", jobId);
             }
+        } catch (InterruptedException e) {
+            if (isShuttingDown()) {
+                jobService.releaseJob(jobId, workerId);
+            }
         } catch (Exception e) {
             handleFailure(job, workerId, e);
         } finally {
@@ -70,6 +116,7 @@ public class JobRunner {
 
     public void handleFailure(JobEntity job, String workerId, Exception e) {
         int attempts = job.getRetryCount();
+
         if (attempts >= maxRetries) {
             log.error("Job {} failed permanently after {} retries", job.getJobId(), attempts, e);
             jobRepository.markDead(job.getJobId(), workerId);
@@ -101,8 +148,8 @@ public class JobRunner {
             } catch (CancellationException e) {
                 throw e;
             } catch (Exception e) {
-                if (failures.incrementAndGet() >= 3) {
-                    log.error("Heartbeat failed 3 times for job {}, interrupting", jobId, e);
+                if (failures.incrementAndGet() >= heartbeatMaxFailures) {
+                    log.error("Heartbeat failed {} times for job {}, interrupting", heartbeatMaxFailures, jobId, e);
                     runnerThread.interrupt();
                     throw new CancellationException();
                 }

@@ -8,7 +8,6 @@ import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import tools.jackson.databind.ObjectMapper;
 
 @Component
 @Slf4j
@@ -20,20 +19,19 @@ public class EmailHandler implements JobStrategy {
     public String type() { return "EMAIL"; };
 
     @Override
-    public void handle(JobEntity job) {
+    public void handle(JobEntity job) throws InterruptedException {
         log.info("SENDING EMAIL AT SCHEDULED TIME =========== {}", job.getJobId());
 
-        String payload = new ObjectMapper().writeValueAsString(job.getPayload());
-        String jobId = job.getType();
+        String jobId = job.getJobId();
         CorrelationData correlationData = new CorrelationData(jobId);
 
         rabbitTemplate.convertAndSend(
                 RabbitQueueConfig.EXCHANGE_KEY,
                 RabbitQueueConfig.REGISTRATION_ROUTING_KEY,
-                payload,
+                job.getPayload(),
                 message -> {
                     message.getMessageProperties().setMessageId(jobId);
-                    message.getMessageProperties().setContentType("application/json");
+                    message.getMessageProperties().setHeader("__TypeId__", "registration");
                     return message;
                 },
                 correlationData

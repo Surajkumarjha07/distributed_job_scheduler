@@ -1,4 +1,4 @@
-package com.distributed.jobscheduler;
+package com.distributed.jobscheduler.services;
 
 import com.distributed.jobscheduler.dto.CreateJobDTO;
 import com.distributed.jobscheduler.entities.JobEntity;
@@ -42,13 +42,11 @@ public class JobService {
                 : jobRepository.findByUserIdAndStatus(userId, status);
     }
 
-    @Transactional
     public List<JobEntity> claimJob(String workerId, int limit) {
         if (limit <= 0) return List.of();
         return jobRepository.claimBatch(workerId, limit);
     }
 
-    @Transactional
     public void releaseJob(String jobId, String workerId) {
         if (jobId == null || workerId == null) return;
         jobRepository.release(jobId, workerId);

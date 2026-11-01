@@ -14,3 +14,4 @@ scheduler:
   retry-base-seconds: 5
   heartbeat-seconds: 5
   api-key-secret: "lockheedmartinsecretf22raptorfighterjet"
+  heartbeat-max-failures: 3

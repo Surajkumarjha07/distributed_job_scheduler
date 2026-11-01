@@ -2,7 +2,7 @@ package com.distributed.jobscheduler.controllers;
 
 import com.distributed.jobscheduler.dto.CreateJobDTO;
 import com.distributed.jobscheduler.entities.JobEntity;
-import com.distributed.jobscheduler.JobService;
+import com.distributed.jobscheduler.services.JobService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -23,7 +23,7 @@ public class JobController {
     JobService jobService;
 
     @PostMapping("/create")
-    public ResponseEntity<?> createJob(@Valid CreateJobDTO request) {
+    public ResponseEntity<?> createJob(@Valid @RequestBody CreateJobDTO request) {
         JobEntity job = jobService.createJob(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(job);
