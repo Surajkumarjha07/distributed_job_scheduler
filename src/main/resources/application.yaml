@@ -9,7 +9,7 @@ server:
 scheduler:
   poll-delay-ms: 5000
   reaper-delay-ms: 30000
-  lock-timeout-seconds: 300   # must be longer than your slowest job
+  lock-timeout-seconds: 300
   max-retries: 3
   retry-base-seconds: 5
   heartbeat-seconds: 5
