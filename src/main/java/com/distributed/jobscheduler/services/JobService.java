@@ -2,6 +2,7 @@ package com.distributed.jobscheduler.services;
 
 import com.distributed.jobscheduler.dto.CreateJobDTO;
 import com.distributed.jobscheduler.entities.JobEntity;
+import com.distributed.jobscheduler.enums.JobStatus;
 import com.distributed.jobscheduler.repositories.JobRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +49,23 @@ public class JobService {
     }
 
     public void releaseJob(String jobId, String workerId) {
-        if (jobId == null || workerId == null) return;
+        if (jobId == null || workerId == null) {
+            throw new IllegalArgumentException("jobId and workerId is required");
+        };
         jobRepository.release(jobId, workerId);
+    }
+
+    public int cancelJob(String jobId) {
+        if (jobId == null || jobId.isBlank()) {
+            throw new IllegalArgumentException("jobId is required");
+        }
+        return jobRepository.cancelJob(jobId);
+    }
+
+    public int updateJobStatus(String jobId, JobStatus status) {
+        if (jobId == null || jobId.isBlank()) {
+            throw new IllegalArgumentException("jobId is required");
+        }
+        return jobRepository.updateJobStatus(jobId, status.toString());
     }
 }

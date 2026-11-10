@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -51,4 +52,21 @@ public class JobController {
         return ResponseEntity.status(HttpStatus.FOUND).body(jobs);
     }
 
+    @PutMapping("/cancel/{jobId}")
+    public ResponseEntity<?> cancelJob(@PathVariable String jobId) {
+        try {
+            if (jobService.cancelJob(jobId) == 1) {
+                return ResponseEntity.ok(Map.of("jobId", jobId, "status", "CANCELLED"));
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+
+        return jobService.getJob(jobId)
+                .<ResponseEntity<?>>map(job -> ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of("error", "cannot cancel, job is "
+                                + job.getStatus().name())))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "job not found: " + jobId)));
+    }
 }

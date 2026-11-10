@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files=true;
+option java_package="com.distributed.jobscheduler.grpc";
+
+package jobscheduler;
+
+service JobService {
+  rpc SubmitJob (SubmitJobRequest) returns (SubmitJobReply);
+  rpc GetJob (GetJobRequest) returns (JobReply);
+  rpc CancelJob (CancelJobRequest) returns (CancelJobReply);
+  rpc updateJobStatus (UpdateJobStatusRequest) returns (JobStatusReply);
+}
+
+message SubmitJobRequest {
+  string userId = 1;
+  string type = 2;
+  string payloadJson = 3;
+  string message = 4;
+  google.protobuf.Timestamp runAt = 5;
+}
+
+message SubmitJobReply {
+  string jobId = 1;
+  string status = 2;
+}
+
+message GetJobRequest { string jobId = 1; }
+message JobReply {
+  string jobId = 1;
+  string type = 2;
+  string status = 3;
+  int32 retryCount = 4;
+  google.protobuf.Timestamp run_at = 5;
+}
+
+message UpdateJobStatusRequest { string jobId = 1; string status = 2; }
+message JobStatusReply {
+  string jobId = 1;
+  string type = 2;
+  string status = 3;
+}
+
+message CancelJobRequest { string jobId = 1; }
+message CancelJobReply { string jobId = 1; string status = 2; }

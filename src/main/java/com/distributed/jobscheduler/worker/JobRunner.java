@@ -99,9 +99,6 @@ public class JobRunner {
 
         try {
             handler.handle(job);
-            if (jobRepository.markCompleted(jobId, workerId) == 0) {
-                log.warn("Job {} finished but was no longer ours (reclaimed?)", jobId);
-            }
         } catch (InterruptedException e) {
             if (isShuttingDown()) {
                 jobService.releaseJob(jobId, workerId);

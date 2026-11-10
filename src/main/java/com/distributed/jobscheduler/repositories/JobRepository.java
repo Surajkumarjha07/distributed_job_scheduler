@@ -67,6 +67,32 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
     @Modifying
     @Query(value = """
         UPDATE jobs
+            SET status = 'CANCELLED',
+                    locked_by = NULL,
+                    locked_at = NULL,
+                    updated_at = now(),
+                    version = version + 1
+            WHERE job_id = :jobId AND status = 'PENDING'
+    """, nativeQuery = true)
+    int cancelJob(@Param("jobId") String jobId);
+
+    @Transactional
+    @Modifying
+    @Query(value = """
+        UPDATE jobs
+            SET status = :status,
+                locked_by = NULL,
+                locked_at = NULL,
+                updated_at = now(),
+                version = version + 1
+            WHERE job_id = :jobId AND status IN ('PENDING', 'RUNNING')
+    """, nativeQuery = true)
+    int updateJobStatus(@Param("jobId") String jobId, @Param("status") String status);
+
+    @Transactional
+    @Modifying
+    @Query(value = """
+        UPDATE jobs
             SET status = 'PENDING',
                 retry_count = retry_count + 1,
                 run_at = now() + make_interval(secs => CAST(:delaySeconds AS double precision)),
