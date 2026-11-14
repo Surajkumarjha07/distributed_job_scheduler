@@ -80,19 +80,6 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
     @Modifying
     @Query(value = """
         UPDATE jobs
-            SET status = :status,
-                locked_by = NULL,
-                locked_at = NULL,
-                updated_at = now(),
-                version = version + 1
-            WHERE job_id = :jobId AND status IN ('PENDING', 'RUNNING')
-    """, nativeQuery = true)
-    int updateJobStatus(@Param("jobId") String jobId, @Param("status") String status);
-
-    @Transactional
-    @Modifying
-    @Query(value = """
-        UPDATE jobs
             SET status = 'PENDING',
                 retry_count = retry_count + 1,
                 run_at = now() + make_interval(secs => CAST(:delaySeconds AS double precision)),
@@ -104,6 +91,46 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
     """, nativeQuery = true)
     int markRetry(@Param("jobId") String jobId, @Param("workerId") String workerId,
                    @Param("delaySeconds") long delaySeconds);
+
+    @Transactional
+    @Modifying
+    @Query(value = """
+        UPDATE jobs
+        SET status = CASE
+                WHEN CAST(:status AS varchar) = 'PENDING'
+                     AND CAST(:countAsAttempt AS boolean)
+                     AND retry_count + 1 >= CAST(:maxRetries AS integer)
+                    THEN 'DEAD'
+                ELSE CAST(:status AS varchar)
+            END,
+            retry_count = CASE
+                WHEN CAST(:status AS varchar) = 'PENDING'
+                     AND CAST(:countAsAttempt AS boolean)
+                    THEN retry_count + 1
+                ELSE retry_count
+            END,
+            run_at = CASE
+                WHEN CAST(:status AS varchar) = 'PENDING' AND CAST(:countAsAttempt AS boolean)
+                        AND retry_count + 1 < CAST(:maxRetries AS integer)
+                    THEN now() + (CAST(:retryBackoffSeconds AS integer) * (retry_count + 1)) * interval '1 second'
+                WHEN CAST(:status AS varchar) = 'PENDING' AND NOT CAST(:countAsAttempt AS boolean)
+                    THEN now() + CAST(:breakerDelaySeconds AS integer) * interval '1 second'
+                ELSE run_at
+            END,
+            locked_by = NULL,
+            locked_at = NULL,
+            updated_at = now(),
+            version = version + 1
+        WHERE job_id = :jobId AND status IN ('PENDING', 'RUNNING')
+    """, nativeQuery = true)
+    int updateJobStatus(
+            @Param("jobId") String jobId,
+            @Param("status") String status,
+            @Param("countAsAttempt") boolean countAsAttempt,
+            @Param("maxRetries") int maxRetries,
+            @Param("retryBackoffSeconds") int retryBackoffSeconds,
+            @Param("breakerDelaySeconds") int breakerDelaySeconds
+    );
 
     @Transactional
     @Modifying

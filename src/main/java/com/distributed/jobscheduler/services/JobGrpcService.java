@@ -145,6 +145,7 @@ public class JobGrpcService extends JobServiceGrpc.JobServiceImplBase {
         try {
             String jobId = req.getJobId();
             String status = req.getStatus();
+            boolean countAsAttempt = req.getCountAsAttempt();
 
             if (jobId.isBlank() || status.isBlank()) {
                 throw new IllegalArgumentException("jobId or status is not defined");
@@ -157,7 +158,7 @@ public class JobGrpcService extends JobServiceGrpc.JobServiceImplBase {
                 throw new IllegalArgumentException("unknown status: " + status);
             }
 
-            int updated = jobService.updateJobStatus(jobId, JobStatus.valueOf(status));
+            int updated = jobService.updateJobStatus(jobId, JobStatus.valueOf(status), countAsAttempt);
             Optional<JobEntity> found = jobService.getJob(jobId);
 
             if (found.isEmpty()) {
@@ -178,7 +179,7 @@ public class JobGrpcService extends JobServiceGrpc.JobServiceImplBase {
             out.onNext(JobStatusReply.newBuilder()
                     .setJobId(jobId)
                     .setType(job.getType())
-                    .setStatus(newStatus.name())
+                    .setStatus(job.getStatus().name())
                     .build()
             );
             out.onCompleted();

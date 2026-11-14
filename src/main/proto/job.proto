@@ -36,7 +36,11 @@ message JobReply {
   google.protobuf.Timestamp run_at = 5;
 }
 
-message UpdateJobStatusRequest { string jobId = 1; string status = 2; }
+message UpdateJobStatusRequest {
+  string jobId = 1;
+  string status = 2;
+  bool countAsAttempt = 3;
+}
 message JobStatusReply {
   string jobId = 1;
   string type = 2;

@@ -6,6 +6,7 @@ import com.distributed.jobscheduler.enums.JobStatus;
 import com.distributed.jobscheduler.repositories.JobRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,14 @@ import java.util.Optional;
 
 @Service
 public class JobService {
+    @Value("${scheduler.retry.max-retries:3}")
+    private int maxRetries;
+
+    @Value("${scheduler.retry.backoff-seconds:30}")
+    private int retryBackoffSeconds;
+
+    @Value("${scheduler.retry.breaker-delay-seconds:30}")
+    private int breakerDelaySeconds;
 
     @Autowired
     JobRepository jobRepository;
@@ -62,10 +71,17 @@ public class JobService {
         return jobRepository.cancelJob(jobId);
     }
 
-    public int updateJobStatus(String jobId, JobStatus status) {
+    public int updateJobStatus(String jobId, JobStatus status, boolean countAsAAttempt) {
         if (jobId == null || jobId.isBlank()) {
             throw new IllegalArgumentException("jobId is required");
         }
-        return jobRepository.updateJobStatus(jobId, status.toString());
+        return jobRepository.updateJobStatus(
+                jobId,
+                status.toString(),
+                countAsAAttempt,
+                maxRetries,
+                retryBackoffSeconds,
+                breakerDelaySeconds
+        );
     }
 }

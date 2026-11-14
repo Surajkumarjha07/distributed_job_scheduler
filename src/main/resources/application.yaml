@@ -15,3 +15,5 @@ scheduler:
   heartbeat-seconds: 5
   api-key-secret: "lockheedmartinsecretf22raptorfighterjet"
   heartbeat-max-failures: 3
+  retry:
+    breaker-delay-seconds: 30
