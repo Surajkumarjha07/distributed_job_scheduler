@@ -23,6 +23,7 @@ public class EmailHandler implements JobStrategy {
         log.info("SENDING EMAIL AT SCHEDULED TIME =========== {}", job.getJobId());
 
         String jobId = job.getJobId();
+        String workerId = job.getLockedBy();
         CorrelationData correlationData = new CorrelationData(jobId);
 
         rabbitTemplate.convertAndSend(
@@ -31,6 +32,7 @@ public class EmailHandler implements JobStrategy {
                 job.getPayload(),
                 message -> {
                     message.getMessageProperties().setMessageId(jobId);
+                    message.getMessageProperties().setHeader("workerId", workerId);
                     message.getMessageProperties().setHeader("__TypeId__", "registration");
                     return message;
                 },

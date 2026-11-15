@@ -99,7 +99,7 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
         SET status = CASE
                 WHEN CAST(:status AS varchar) = 'PENDING'
                      AND CAST(:countAsAttempt AS boolean)
-                     AND retry_count + 1 >= CAST(:maxRetries AS integer)
+                     AND retry_count + 1 > CAST(:maxRetries AS integer)
                     THEN 'DEAD'
                 ELSE CAST(:status AS varchar)
             END,
@@ -111,7 +111,7 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
             END,
             run_at = CASE
                 WHEN CAST(:status AS varchar) = 'PENDING' AND CAST(:countAsAttempt AS boolean)
-                        AND retry_count + 1 < CAST(:maxRetries AS integer)
+                        AND retry_count + 1 <= CAST(:maxRetries AS integer)
                     THEN now() + (CAST(:retryBackoffSeconds AS integer) * (retry_count + 1)) * interval '1 second'
                 WHEN CAST(:status AS varchar) = 'PENDING' AND NOT CAST(:countAsAttempt AS boolean)
                     THEN now() + CAST(:breakerDelaySeconds AS integer) * interval '1 second'
@@ -121,10 +121,11 @@ public interface JobRepository extends JpaRepository<JobEntity, String> {
             locked_at = NULL,
             updated_at = now(),
             version = version + 1
-        WHERE job_id = :jobId AND status IN ('PENDING', 'RUNNING')
+        WHERE job_id = :jobId AND locked_by = :workerId AND status IN ('PENDING', 'RUNNING')
     """, nativeQuery = true)
     int updateJobStatus(
             @Param("jobId") String jobId,
+            @Param("workerId") String workerId,
             @Param("status") String status,
             @Param("countAsAttempt") boolean countAsAttempt,
             @Param("maxRetries") int maxRetries,

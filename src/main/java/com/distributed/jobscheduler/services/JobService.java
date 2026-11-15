@@ -71,12 +71,13 @@ public class JobService {
         return jobRepository.cancelJob(jobId);
     }
 
-    public int updateJobStatus(String jobId, JobStatus status, boolean countAsAAttempt) {
+    public int updateJobStatus(String jobId, JobStatus status, boolean countAsAAttempt, String workerId) {
         if (jobId == null || jobId.isBlank()) {
             throw new IllegalArgumentException("jobId is required");
         }
         return jobRepository.updateJobStatus(
                 jobId,
+                workerId,
                 status.toString(),
                 countAsAAttempt,
                 maxRetries,
